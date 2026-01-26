@@ -1,0 +1,1 @@
+{"time":"2026-01-26T17:26:32.451271176+08:00","level":"INFO","source":{"function":"main.main","file":"/home/zhaoyi/Snippet/cmd/web/main.go","line":30},"msg":"starting server","addr":":4000"}
