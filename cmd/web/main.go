@@ -7,15 +7,17 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"snippet/internal/models"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
+	"snippet/internal/models"
 )
 
 type application struct {
 	logger        *slog.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -39,16 +41,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 初始化 Decoder 实例
+	formDecoder := form.NewDecoder()
+
+	// 添加依赖
 	app := &application{
 		logger:        logger,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	logger.Info("starting server", "addr", *addr)
 
 	err = http.ListenAndServe(*addr, app.routes())
-
 	logger.Error(err.Error())
 	os.Exit(1)
 
