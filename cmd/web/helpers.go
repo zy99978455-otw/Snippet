@@ -45,11 +45,12 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 		return
 	}
 
-	// 4. 写状态码
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
 	w.WriteHeader(status)
 
 	// 5. 发给用户
-	_, _ = buf.WriteTo(w)
+	buf.WriteTo(w)
 }
 
 // 工厂函数

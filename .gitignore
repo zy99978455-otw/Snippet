@@ -1,2 +1,3 @@
 # 忽略数据库数据文件
 mysql_data/
+tls/
