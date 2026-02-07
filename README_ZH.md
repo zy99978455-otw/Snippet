@@ -8,6 +8,11 @@ Snippet 是一个基于 Go 语言构建的文本分享 Web 应用。
 
 * **发布 Snippet**：用户可以创建包含标题、内容和过期时间的文本片段。
 * **查看 Snippet**：通过 ID 查看已发布的文本内容。
+* **HTTPS 支持**：
+  * 自动启用 TLS 加密（使用自签名证书）。
+  * 强制使用高性能椭圆曲线（X25519, P256）优化 TLS 握手。
+**服务器加固**：
+  * 配置 `IdleTimeout`、`ReadTimeout` 和 `WriteTimeout` 以防御慢速连接攻击（如 Slowloris）。
 * **数据持久化**：使用 MySQL 存储所有数据。
 * **中间件架构**：使用 `alice` 管理中间件链（Panic 恢复、请求日志、安全头）。
 * **表单处理**：
@@ -90,7 +95,22 @@ CREATE INDEX sessions_expiry_idx ON sessions (expiry);
 CREATE USER 'web'@'localhost' IDENTIFIED BY 'pass';
 GRANT SELECT, INSERT, UPDATE, DELETE ON snippetbox.* TO 'web'@'localhost';
 ```
-### 4. 运行应用
+
+### 4. 生成 TLS 证书 (HTTPS 必需)
+在运行服务器之前，需要生成开发用的自签名证书：
+
+```Bash
+# 创建存放证书的目录
+mkdir tls
+cd tls
+
+# 使用 Go 标准库工具生成证书 (适用于 Linux/macOS/WSL)
+go run $(go env GOROOT)/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+
+# 返回项目根目录
+cd ..
+```
+### 5. 运行应用
 确保依赖已下载：
 ```Bash
 go mod tidy
@@ -103,6 +123,11 @@ go run ./cmd/web
 ```Bash
 go run ./cmd/web -addr=":8080" -dsn="web:pass@/snippetbox?parseTime=true"
 ```
+
+### 6. 访问应用
+打开浏览器访问：https://localhost:4000
+
+⚠️ 注意：由于使用的是自签名证书，浏览器会提示“连接不安全”。这是正常现象，请点击“高级” -> “继续访问” (Proceed) 即可。
 访问浏览器：[http://localhost:4000](http://localhost:4000)
 
 📂 项目结构
@@ -110,7 +135,7 @@ go run ./cmd/web -addr=":8080" -dsn="web:pass@/snippetbox?parseTime=true"
 snippetbox/
 ├── cmd/
 │   └── web/
-│       ├── main.go        # 应用入口，依赖注入
+│       ├── main.go        # 应用入口 (HTTPS server, timeouts)
 │       ├── handlers.go    # HTTP 处理函数
 │       ├── routes.go      # 路由定义 (ServeMux)
 │       ├── middleware.go  # 中间件逻辑
@@ -122,8 +147,10 @@ snippetbox/
 ├── ui/
 │   ├── html/              # HTML 模板文件
 │   └── static/            # 静态资源 (CSS, JS, Images)
+├── tls/                   # TLS 证书 (不提交到 Git)
 ├── go.mod
-└── README.md
+├── README.md              # 英文说明文档
+└── README_ZH.md           # 中文说明文档
 ```
 ***
 

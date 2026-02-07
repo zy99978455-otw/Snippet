@@ -8,6 +8,11 @@ This project aims to demonstrate core concepts in Go web development, including 
 
 * **Publish Snippet**: Users can create text snippets with a title, content, and expiration time.
 * **View Snippet**: View published content via its ID.
+* **HTTPS Support**:
+  * TLS encryption enabled by default (using self-signed certificates).
+  * Enforced high-performance elliptic curves (X25519, P256) for TLS handshakes.
+* **Server Hardening**:
+  * Configured `IdleTimeout`, `ReadTimeout`, and `WriteTimeout` to defend against slow-client attacks (e.g., Slowloris).
 * **Data Persistence**: Uses MySQL for all data storage.
 * **Middleware Architecture**: Uses `alice` to manage middleware chains (Panic recovery, request logging, security headers).
 * **Form Processing**:
@@ -95,7 +100,22 @@ CREATE USER 'web'@'localhost' IDENTIFIED BY 'pass';
 GRANT SELECT, INSERT, UPDATE, DELETE ON snippetbox.* TO 'web'@'localhost';
 ```
 
-### 4. Run the Application
+### 4. Generate TLS Certificates (Required for HTTPS)
+Before running the server, you need to generate self-signed certificates for development:
+
+```Bash
+# Create directory for certificates
+mkdir tls
+cd tls
+
+# Use Go standard library tool to generate certs (Linux/macOS/WSL)
+go run $(go env GOROOT)/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+
+# Return to project root
+cd ..
+```
+
+### 5. Run the Application
 Ensure dependencies are downloaded:
 
 ```Bash
@@ -113,16 +133,21 @@ go run ./cmd/web -addr=":8080" -dsn="web:pass@/snippetbox?parseTime=true"
 Visit in browser: http://localhost:4000
 ```
 
+### 6. Access the Application
+Visit in browser: https://localhost:4000
+
+⚠️ Note: Since we are using a self-signed certificate, your browser will show a "Not Secure" warning. This is expected. Please click "Advanced" -> "Proceed" to access the site.
+
 📂 Project Structure
 ```Plaintext
 snippetbox/
 ├── cmd/
 │   └── web/
-│       ├── main.go        # App entry point, dependency injection
+│       ├── main.go        # App entry point (HTTPS server, timeouts, config)
 │       ├── handlers.go    # HTTP handlers
 │       ├── routes.go      # Router definition (ServeMux)
 │       ├── middleware.go  # Middleware logic
-│       ├── helpers.go     # Helper functions (e.g., render, serverError)
+│       ├── helpers.go     # Helper functions (rendering, error handling)
 │       └── templates.go   # Template caching and data structures
 ├── internal/
 │   ├── models/            # Database models and operations
@@ -130,8 +155,10 @@ snippetbox/
 ├── ui/
 │   ├── html/              # HTML template files
 │   └── static/            # Static assets (CSS, JS, Images)
+├── tls/                   # TLS certificates (Ignored by Git)
 ├── go.mod
-└── README.md
+├── README.md              # English Documentation
+└── README_ZH.md           # Chinese Documentation
 ```
 
 ## 👤 Author
