@@ -2,15 +2,14 @@
 
 {{define "main"}}
 <form action='/user/login' method='POST' novalidate>
-    <!-- Notice that here we are looping over the NonFieldErrors and displaying
-    them, if any exist -->
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     {{range .Form.NonFieldErrors}}
         <div class='error'>{{.}}</div>
     {{end}}
     <div>
         <label>Email:</label>
         {{with .Form.FieldErrors.email}}
-        <label class='error'>{{.}}</label>
+            <label class='error'>{{.}}</label>
         {{end}}
         <input type='email' name='email' value='{{.Form.Email}}'>
     </div>
