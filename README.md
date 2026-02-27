@@ -6,23 +6,27 @@ This project aims to demonstrate core concepts in Go web development, including 
 
 ## ✨ Features
 
-* **Publish Snippet**: Users can create text snippets with a title, content, and expiration time.
-* **View Snippet**: View published content via its ID.
-* **HTTPS Support**:
-  * TLS encryption enabled by default (using self-signed certificates).
-  * Enforced high-performance elliptic curves (X25519, P256) for TLS handshakes.
-* **Server Hardening**:
-  * Configured `IdleTimeout`, `ReadTimeout`, and `WriteTimeout` to defend against slow-client attacks (e.g., Slowloris).
-* **Data Persistence**: Uses MySQL for all data storage.
-* **Middleware Architecture**: Uses `alice` to manage middleware chains (Panic recovery, request logging, security headers).
-* **Form Processing**:
-    * Automatic decoding of HTML form data into Go structs (`go-playground/form`).
-    * Custom form validation logic (`validator` package).
-* **Session Management**:
-    * MySQL-backed server-side session storage (`alexedwards/scs`).
-    * Support for Flash Messages (one-time notifications).
-* **Dynamic HTML**: Rendered using the Go standard library `html/template`, featuring common layouts and partial templates.
-* **Static File Serving**: Handling CSS, JS, and image resources.
+* **Core Functionality**:
+  * **Publish & View**: Users can create text snippets with a title, content, and expiration time, and view published content via a unique ID.
+* **Authentication & Authorization**:
+  * User signup, login, and secure logout functionalities.
+  * Session-based route protection (unauthenticated users cannot publish snippets).
+* **Security Enhancements**:
+  * **HTTPS Support**: TLS encryption enabled by default, enforcing high-performance elliptic curves (X25519, P256) for TLS handshakes.
+  * **CSRF Protection**: Token-based Cross-Site Request Forgery defense using `justinas/nosurf`.
+  * **Session Fixation Defense**: Automatic rotation of Session IDs (`RenewToken`) during privilege level changes (login/logout).
+  * **Password Security**: Uses the `bcrypt` hashing algorithm for secure password storage.
+  * **Server Hardening**: Configured `IdleTimeout`, `ReadTimeout`, and `WriteTimeout` to defend against slow-client attacks (e.g., Slowloris).
+* **Single Binary Deployment**:
+  * Utilizes Go 1.16+ `//go:embed` feature to package HTML templates and static assets (CSS, JS) directly into the compiled binary for effortless deployment.
+* **Quality Assurance (Testing)**:
+  * Comprehensive unit testing using the `net/http/httptest` package to mock HTTP requests and responses.
+  * Implementation of elegant **Table-driven tests**.
+  * Custom generic test assertion helpers (`internal/assert`) for high code reusability.
+* **Data Persistence**: Uses MySQL for all data storage (Snippets and Users).
+* **Form & Session Management**:
+  * Automatic decoding of HTML form data and custom validation logic (`validator` package).
+  * MySQL-backed server-side session storage supporting Flash Messages.
 
 ## 🛠️ Tech Stack
 
@@ -33,6 +37,8 @@ This project aims to demonstrate core concepts in Go web development, including 
     * [`github.com/justinas/alice`](https://github.com/justinas/alice): Middleware chaining
     * [`github.com/go-playground/form`](https://github.com/go-playground/form): Form decoding
     * [`github.com/alexedwards/scs/v2`](https://github.com/alexedwards/scs): Session management
+    * [`golang.org/x/crypto/bcrypt`](https://pkg.go.dev/golang.org/x/crypto/bcrypt): Password hashing
+    * [`github.com/justinas/nosurf`](https://github.com/justinas/nosurf): CSRF protection middleware
 
 ## 🚀 Quick Start
 
@@ -143,18 +149,28 @@ Visit in browser: https://localhost:4000
 snippetbox/
 ├── cmd/
 │   └── web/
-│       ├── main.go        # App entry point (HTTPS server, timeouts, config)
-│       ├── handlers.go    # HTTP handlers
-│       ├── routes.go      # Router definition (ServeMux)
-│       ├── middleware.go  # Middleware logic
+│       ├── context.go     # Context keys management
+│       ├── handlers.go    # HTTP handlers (core business logic)
+│       ├── handlers_test.go # Automated tests for handlers
 │       ├── helpers.go     # Helper functions (rendering, error handling)
-│       └── templates.go   # Template caching and data structures
+│       ├── main.go        # App entry point (Dependency injection, server config)
+│       ├── middleware.go  # Middleware (Security, logging, session, auth)
+│       ├── middleware_test.go # Automated tests for middleware
+│       ├── routes.go      # Router definition and dispatch
+│       ├── templates.go   # Template caching and custom functions
+│       └── templates_test.go # Automated tests for template formatting
 ├── internal/
-│   ├── models/            # Database models and operations
-│   └── validator/         # Form validation logic
+│   ├── assert/            # Generic test assertion library
+│   │   └── assert.go
+│   ├── models/            # Database interaction models
+│   │   ├── errors.go
+│   │   ├── snippets.go
+│   │   └── users.go
+│   └── validator/         # Independent form validation logic
 ├── ui/
 │   ├── html/              # HTML template files
-│   └── static/            # Static assets (CSS, JS, Images)
+│   ├── static/            # Static assets (CSS, JS, Images)
+│   └── efs.go             # Embedded file system directive (go:embed)
 ├── tls/                   # TLS certificates (Ignored by Git)
 ├── go.mod
 ├── README.md              # English Documentation
